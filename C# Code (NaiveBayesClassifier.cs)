@@ -1,0 +1,91 @@
+using System;
+using System.Collections.Generic;
+
+class NaiveBayesClassifier
+{
+    static void Main()
+    {
+        // Beispiel-Daten: Dokumente und ihre Klassen
+        string[] documents = {
+            "Ich liebe Programmieren",
+            "Programmieren macht Spaß",
+            "Ich mag Fußball",
+            "Fußball ist ein tolles Spiel",
+            "Ich genieße es, Code zu schreiben",
+            "Fußballspiele sind spannend"
+        };
+        string[] labels = { "Technologie", "Technologie", "Sport", "Sport", "Technologie", "Sport" };
+
+        // Trainieren des Klassifikators
+        NaiveBayes nb = new NaiveBayes();
+        nb.Train(documents, labels);
+
+        // Klassifikation neuer Dokumente
+        string[] newDocuments = {
+            "Ich liebe Fußball",
+            "Das Programmieren ist mein Hobby"
+        };
+
+        foreach (string doc in newDocuments)
+        {
+            string category = nb.Classify(doc);
+            Console.WriteLine($"Dokument: \"{doc}\" gehört zur Klasse: {category}");
+        }
+    }
+}
+
+class NaiveBayes
+{
+    private Dictionary<string, int> techWords = new Dictionary<string, int>();
+    private Dictionary<string, int> sportWords = new Dictionary<string, int>();
+    private int techCount = 0;
+    private int sportCount = 0;
+    private int techDocs = 0;
+    private int sportDocs = 0;
+
+    public void Train(string[] documents, string[] labels)
+    {
+        for (int i = 0; i < documents.Length; i++)
+        {
+            string doc = documents[i];
+            string label = labels[i];
+            string[] words = doc.ToLower().Split(' ');
+
+            if (label == "Technologie")
+            {
+                techDocs++;
+                foreach (string word in words)
+                {
+                    if (!techWords.ContainsKey(word))
+                        techWords[word] = 0;
+                    techWords[word]++;
+                }
+            }
+            else
+            {
+                sportDocs++;
+                foreach (string word in words)
+                {
+                    if (!sportWords.ContainsKey(word))
+                        sportWords[word] = 0;
+                    sportWords[word]++;
+                }
+            }
+        }
+    }
+
+    public string Classify(string document)
+    {
+        string[] words = document.ToLower().Split(' ');
+        double techScore = Math.Log((double)techDocs / (techDocs + sportDocs));
+        double sportScore = Math.Log((double)sportDocs / (techDocs + sportDocs));
+
+        foreach (string word in words)
+        {
+            techScore += Math.Log((techWords.GetValueOrDefault(word, 0) + 1.0) / (techCount + techWords.Count));
+            sportScore += Math.Log((sportWords.GetValueOrDefault(word, 0) + 1.0) / (sportCount + sportWords.Count));
+        }
+
+        return techScore > sportScore ? "Technologie" : "Sport";
+    }
+}
